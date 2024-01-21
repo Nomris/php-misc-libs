@@ -66,11 +66,7 @@ final class RequestData
         while ($i >= 0)
         {
             $querySegements = explode('=', $rawQuery[$i], 2);
-            if (count($querySegements) == 1)
-            {
-                $querySegements[1] = $querySegements[0];
-                $querySegements[0] = '';
-            }
+            if (count($querySegements) == 1) $querySegements[1] = true;
             $query[$querySegements[0]] = $querySegements[1];
             $i--;
         }
