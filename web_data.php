@@ -32,7 +32,7 @@ final class RequestData
 
     public readonly string $LocalEndPoint;
 
-    public readonly string $ProxyEndPoint;
+    public readonly string|null $ProxyEndPoint;
 
     public readonly string|null $ContentType;
 
