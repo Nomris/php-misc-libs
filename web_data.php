@@ -241,7 +241,7 @@ final class RequestData
 // Update Check
 if (true) // Set false to disable, true to enable
 {
-    $onlineVersion = file_get_contents('https://raw.githubusercontent.com/Nomris/php-misc-libs/main/web_data.php');
+    $onlineVersion = file_get_contents('https://raw.githubusercontent.com/Nomris/php-misc-libs/UpdateCheck/web_data.php');
     if ($onlineVersion === false)
         error_log('WARN: ' . __FILE__ . '> Unbale to check for update');
     else
