@@ -78,8 +78,9 @@ final class RequestData
      * @param array $server Override default of using $_SERVER (The array keys must match)
      * @param mixed $contentOverride Override getting Content from globals or php://input
      */
-    public function __construct(array $server = $_SERVER, mixed $contentOverride = null)
+    public function __construct(array $server = null, mixed $contentOverride = null)
     {
+        if ($server === null) $server = $_SERVER;
         $this->Method = strtolower($server['REQUEST_METHOD']); // Getting HTTP-Method
         $this->Schema = strtolower($server['REQUEST_SCHEME']); // Getting HTTP-Protocol
         $this->Host = $server['HTTP_HOST']; // Getting Http-Hostname
