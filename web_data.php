@@ -74,12 +74,16 @@ final class RequestData
      */
     public readonly mixed $Content;
 
-    public function __construct()
+    /**
+     * @param array $server Override default of using $_SERVER (The array keys must match)
+     * @param mixed $contentOverride Override getting Content from globals or php://input
+     */
+    public function __construct(array $server = $_SERVER, mixed $contentOverride = null)
     {
-        $this->Method = strtolower($_SERVER['REQUEST_METHOD']); // Getting HTTP-Method
-        $this->Schema = strtolower($_SERVER['REQUEST_SCHEME']); // Getting HTTP-Protocol
-        $this->Host = $_SERVER['HTTP_HOST']; // Getting Http-Hostname
-        $url = urldecode($_SERVER['REQUEST_URI']); // Getting and decoding URL
+        $this->Method = strtolower($server['REQUEST_METHOD']); // Getting HTTP-Method
+        $this->Schema = strtolower($server['REQUEST_SCHEME']); // Getting HTTP-Protocol
+        $this->Host = $server['HTTP_HOST']; // Getting Http-Hostname
+        $url = urldecode($server['REQUEST_URI']); // Getting and decoding URL
         
         $this->RawUri = $this->Schema . '://' . $this->Host . $url; // Construct RawURI
 
@@ -111,68 +115,70 @@ final class RequestData
 
         // Iterate and assign all HTTP-Headers
         $headers = array();
-        $_serverKeys = array_keys($_SERVER);
-        $i = count ($_serverKeys) - 1;
+        $serverKeys = array_keys($server);
+        $i = count ($serverKeys) - 1;
         while ($i >= 0)
         {
-            if (str_starts_with($_serverKeys[$i], 'HTTP_')) $headers[strtolower(str_replace('_', '-', substr($_serverKeys[$i], 5)))] = $_SERVER[$_serverKeys[$i]];
+            if (str_starts_with($serverKeys[$i], 'HTTP_')) $headers[strtolower(str_replace('_', '-', substr($serverKeys[$i], 5)))] = $server[$serverKeys[$i]];
             $i--;
         }
 
         // Process and potently parse Content
         $contentType = null;
-        $content = null;
-        if (isset($_SERVER['CONTENT_TYPE'])) 
+        $content = $contentOverride;
+        if (isset($server['CONTENT_TYPE'])) 
         {
-            $headers['content-type'] = $_SERVER['CONTENT_TYPE']; // Add ContentType to headers
-            if (isset($_SERVER['CONTENT_LENGTH'])) $headers['content-length'] = $_SERVER['CONTENT_LENGTH']; // Add ContentLength to headers
-            $contentType = explode(';', $_SERVER['CONTENT_TYPE'], 2)[0]; // Ignore ContentType parameters for switch case
-            switch ($contentType)
-            {
-                case 'application/json':
-                    $content = json_decode(file_get_contents('php://input'), true);
-                    break;
+            $headers['content-type'] = $server['CONTENT_TYPE']; // Add ContentType to headers
+            if (isset($server['CONTENT_LENGTH'])) $headers['content-length'] = $server['CONTENT_LENGTH']; // Add ContentLength to headers
+            $contentType = explode(';', $server['CONTENT_TYPE'], 2)[0]; // Ignore ContentType parameters for switch case
 
-                    
-                case 'application/xml':
-                    $parser = xml_parser_create();
-                    $content = xml_parse($parser, file_get_contents('php://input'), true);
-                    xml_parser_free($parser);
-                    break;
+            if ($contentOverride === null)
+                switch ($contentType)
+                {
+                    case 'application/json':
+                        $content = json_decode(file_get_contents('php://input'), true);
+                        break;
 
-                case 'multipart/form-data':
-                    if ($this->Method !== 'post') 
-                        error_log('Invalid Request-Method for MIME-Type: ' . $contentType);
-                    else 
-                        $content = $_POST;
-                    break;
+                        
+                    case 'application/xml':
+                        $parser = xml_parser_create();
+                        $content = xml_parse($parser, file_get_contents('php://input'), true);
+                        xml_parser_free($parser);
+                        break;
 
-                case 'application/x-www-form-urlencoded':
-                    foreach (explode('&', file_get_contents('php://input')) as $queryElem)
-                    {
-                        $components = explode('=', $queryElem, 2);
-                        $content[$components[0]] = urldecode($components[1]);
-                    }
-                    break;
+                    case 'multipart/form-data':
+                        if ($this->Method !== 'post') 
+                            error_log('Invalid Request-Method for MIME-Type: ' . $contentType);
+                        else 
+                            $content = $_POST;
+                        break;
 
-                default: // If nothing worked get content raw
-                    $content = file_get_contents('php://input');
-                    break;
-            }
+                    case 'application/x-www-form-urlencoded':
+                        foreach (explode('&', file_get_contents('php://input')) as $queryElem)
+                        {
+                            $components = explode('=', $queryElem, 2);
+                            $content[$components[0]] = urldecode($components[1]);
+                        }
+                        break;
+
+                    default: // If nothing worked get content raw
+                        $content = file_get_contents('php://input');
+                        break;
+                }
         }
 
         if (isset($headers['x-forwarded-for'])) // Check for Proxy Server
         {
             $this->RemoteEndPoint = "{$headers['x-forwarded-for']}:-1";
-            $this->ProxyEndPoint = "{$_SERVER['REMOTE_ADDR']}:{$_SERVER['REMOTE_PORT']}";
+            $this->ProxyEndPoint = "{$server['REMOTE_ADDR']}:{$server['REMOTE_PORT']}";
         }
         else
         {
-            $this->RemoteEndPoint = "{$_SERVER['REMOTE_ADDR']}:{$_SERVER['REMOTE_PORT']}";
+            $this->RemoteEndPoint = "{$server['REMOTE_ADDR']}:{$server['REMOTE_PORT']}";
             $this->ProxyEndPoint = null;
         }
 
-        $this->LocalEndPoint = "{$_SERVER['SERVER_ADDR']}:{$_SERVER['SERVER_PORT']}";
+        $this->LocalEndPoint = "{$server['SERVER_ADDR']}:{$server['SERVER_PORT']}";
 
         $this->ContentType = $contentType;
         $this->Content = $content;
