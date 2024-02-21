@@ -248,6 +248,9 @@ if (true) // Set false to disable, true to enable
     {
         $onlineVersion = hash('sha256', $onlineVersion);
         $localversion = hash('sha256', file_get_contents(__FILE__));
+
+        var_dump($onlineVersion, $localversion);
+
         if ($localversion !== $onlineVersion)
             error_log('WARN: ' . __FILE__ . '> Online Version and Local Version differ');
     }
