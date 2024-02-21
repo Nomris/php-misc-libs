@@ -241,15 +241,13 @@ final class RequestData
 // Update Check
 if (true) // Set false to disable, true to enable
 {
-    $onlineVersion = file_get_contents('https://raw.githubusercontent.com/Nomris/php-misc-libs/UpdateCheck/web_data.php');
+    $onlineVersion = file_get_contents('https://raw.githubusercontent.com/Nomris/php-misc-libs/main/web_data.php');
     if ($onlineVersion === false)
         error_log('WARN: ' . __FILE__ . '> Unbale to check for update');
     else
     {
         $onlineVersion = hash('sha256', $onlineVersion);
         $localversion = hash('sha256', file_get_contents(__FILE__));
-
-        var_dump($onlineVersion, $localversion);
 
         if ($localversion !== $onlineVersion)
             error_log('WARN: ' . __FILE__ . '> Online Version and Local Version differ');
