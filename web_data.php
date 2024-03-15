@@ -82,10 +82,9 @@ final class RequestData
     {
         if ($server === null) $server = $_SERVER;
         $this->Method = strtolower($server['REQUEST_METHOD']); // Getting HTTP-Method
-        $this->Schema = strtolower($server['REQUEST_SCHEME']); // Getting HTTP-Protocol
+        $this->Schema = strtolower(isset($server['REQUEST_SCHEME']) ? $server['REQUEST_SCHEME'] : explode('/', $server['SERVER_PROTOCOL'])[0]); // Getting HTTP-Protocol
         $this->Host = $server['HTTP_HOST']; // Getting Http-Hostname
         $url = urldecode($server['REQUEST_URI']); // Getting and decoding URL
-        
         $this->RawUri = $this->Schema . '://' . $this->Host . $url; // Construct RawURI
 
         // Trim first slash from url
@@ -179,7 +178,7 @@ final class RequestData
             $this->ProxyEndPoint = null;
         }
 
-        $this->LocalEndPoint = "{$server['SERVER_ADDR']}:{$server['SERVER_PORT']}";
+        $this->LocalEndPoint = isset($server['SERVER_ADDR']) ? $server['SERVER_ADDR'] : $server['SERVER_NAME'] . ":{$server['SERVER_PORT']}";
 
         $this->ContentType = $contentType;
         $this->Content = $content;
